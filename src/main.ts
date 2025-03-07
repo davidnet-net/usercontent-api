@@ -11,8 +11,7 @@ const port = Number(environment.API_PORT);
 let db = await connectdb(environment);
 
 app.use(oakCors({
-    origin:
-        "https://www.davidnet.net, https://davidnet.net, https://account.davidnet.net, https://auth.davidnet.net",
+    origin: ["https://www.davidnet.net", "https://davidnet.net", "https://account.davidnet.net", "https://auth.davidnet.net"],
     methods: ["POST"],
     allowedHeaders: ["Content-Type"],
     credentials: true,
