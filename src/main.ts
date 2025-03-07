@@ -28,6 +28,10 @@ app.use(async (ctx: Context) => {
             file?: any;
         };
 
+        console.log(ctx);
+        console.log(body);
+        console.log(body.file);
+
         if (!body.token || !body.type) {
             ctx.response.status = 400;
             ctx.response.body = { error: "Missing token, or type." };
