@@ -34,7 +34,7 @@ app.use(async (ctx: Context) => {
 
         if (!body.token || !body.type) {
             ctx.response.status = 400;
-            ctx.response.body = { error: "Missing token, or type." };
+            ctx.response.body = { error: "Missing token, or type.", ctx: ctx, body: body };
             return;
         }
 
