@@ -28,9 +28,15 @@ app.use(async (ctx: Context) => {
             file?: any;
         };
 
-        if (!body.token || !body.type || !body.file) {
+        if (!body.token || !body.type) {
             ctx.response.status = 400;
-            ctx.response.body = { error: "Missing token, type, or file" };
+            ctx.response.body = { error: "Missing token, or type." };
+            return;
+        }
+
+        if (!body.file) {
+            ctx.response.status = 400;
+            ctx.response.body = { error: "Missing file." };
             return;
         }
 
