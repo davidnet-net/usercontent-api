@@ -175,6 +175,55 @@ router.get("/get_file_info", async (ctx: Context) => {
     }
 });
 
+// ✅ Get User Uploads by Session Token
+router.get("/get_user_uploads", async (ctx: Context) => {
+    const body = await ctx.request.body().value as {
+        token?: string;
+    };
+
+    // Check if token is provided
+    if (!body.token) {
+        ctx.response.status = 400;
+        ctx.response.body = { error: "Missing token" };
+        return;
+    }
+
+    // Validate session token and get user ID
+    const sessionResult = await db.query(
+        "SELECT userid FROM sessions WHERE token = ?",
+        [body.token],
+    );
+
+    if (sessionResult.length === 0) {
+        ctx.response.status = 400;
+        ctx.response.body = { error: "Invalid session token" };
+        return;
+    }
+
+    const userId = sessionResult[0].userid;
+
+    // Query to get all uploads for the user
+    const uploads = await db.query(
+        "SELECT id, path, type, created_at FROM usercontent WHERE userid = ?",
+        [userId],
+    );
+
+    // If no uploads are found, return a 404
+    if (uploads.length === 0) {
+        ctx.response.status = 404;
+        ctx.response.body = { error: "No uploads found for this user." };
+        return;
+    }
+
+    // Return the uploads as JSON
+    ctx.response.body = uploads.map((upload: any) => ({
+        id: upload.id,
+        url: `${BASE_URL}${upload.path.split('/').pop()}`, // Generate URL from file path
+        type: upload.type,
+        created_at: upload.created_at,
+    }));
+});
+
 app.use(router.routes());
 app.use(router.allowedMethods());
 
