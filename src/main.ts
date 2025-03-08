@@ -289,7 +289,7 @@ router.post("/delete_content", async (ctx: Context) => {
     ctx.response.body = { message: "Content deleted successfully." };
 });
 
-router.post("+", async (ctx: Context) => {
+router.post("/delete_all_content", async (ctx: Context) => {
     const body = await ctx.request.body().value as { token?: string };
 
     if (!body.token) {
