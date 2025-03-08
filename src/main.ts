@@ -177,6 +177,7 @@ router.post("/get_file_info", async (ctx: Context) => {
 
 // ✅ Get User Uploads by Session Token
 router.post("/get_user_uploads", async (ctx: Context) => {
+    console.log(`get_user_uploads request: ${ctx.request.method} ${ctx.request.url}`);
     const body = await ctx.request.body().value as {
         token?: string;
     };
@@ -223,6 +224,12 @@ router.post("/get_user_uploads", async (ctx: Context) => {
         created_at: upload.created_at,
     }));
 });
+
+app.use(async (ctx, next) => {
+    console.log(`Incoming request: ${ctx.request.method} ${ctx.request.url}`);
+    await next();
+});
+
 
 app.use(router.routes());
 app.use(router.allowedMethods());
