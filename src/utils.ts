@@ -10,3 +10,20 @@ export function generateRandomString(length: number): string {
 
     return randomString;
 }
+
+export function addaccountlog(
+    // deno-lint-ignore no-explicit-any
+    db: any,
+    userid: string,
+    title: string,
+    message: string,
+) {
+    const currentUTCDate = new Date();
+    const date = currentUTCDate.toISOString().slice(0, 19)
+        .replace("T", " ");
+
+    db.query(
+        `INSERT INTO accountlogs (userid, title, message, date) VALUES (?, ?, ?, ?)`,
+        [userid, title, message, date],
+    );
+}

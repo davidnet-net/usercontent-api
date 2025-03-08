@@ -8,7 +8,7 @@ import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 import { extname } from "https://deno.land/std@0.203.0/path/mod.ts";
 import { ensureDir } from "https://deno.land/std@0.203.0/fs/mod.ts";
 import { connectdb } from "./sql.ts";
-import { generateRandomString } from "./utils.ts";
+import { addaccountlog, generateRandomString } from "./utils.ts";
 
 const app = new Application();
 const router = new Router();
@@ -91,6 +91,8 @@ router.post("/upload", async (ctx: Context) => {
         [userid, filepath, type, created_at],
     );
     const contentId = dbResult.lastInsertId;
+
+    addaccountlog(db, userid, "Usercontent", "Uploaded " + filepath.slice(45) + ".");
 
     ctx.response.body = {
         message: "File uploaded successfully",
@@ -283,10 +285,11 @@ router.post("/delete_content", async (ctx: Context) => {
     // ✅ Delete the record from the database
     await db.execute("DELETE FROM usercontent WHERE id = ?", [body.id]);
 
+    addaccountlog(db, userId, "Usercontent", "Deleted " + content.path.slice(45) + ".");
     ctx.response.body = { message: "Content deleted successfully." };
 });
 
-router.post("/delete_all_content", async (ctx: Context) => {
+router.post("+", async (ctx: Context) => {
     const body = await ctx.request.body().value as { token?: string };
 
     if (!body.token) {
@@ -326,13 +329,15 @@ router.post("/delete_all_content", async (ctx: Context) => {
         try {
             await Deno.remove(content.path);
             deletedFiles++;
-        } catch (_error) {
+        } catch (_error) { 
             console.warn(`Failed to delete file: ${content.path}`);
         }
     }
 
     // ✅ Verwijder alle database records van deze gebruiker
     await db.execute("DELETE FROM usercontent WHERE userid = ?", [userId]);
+
+    addaccountlog(db, userId, "Usercontent", `Deleted all usercontent.`);
 
     ctx.response.body = {
         message: `Deleted ${deletedFiles} file(s) and database records.`,
