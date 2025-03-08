@@ -224,6 +224,67 @@ router.post("/get_user_uploads", async (ctx: Context) => {
     }));
 });
 
+// ✅ Delete Content Route
+router.post("/delete_content", async (ctx: Context) => {
+    const body = await ctx.request.body().value as {
+        token?: string;
+        id?: string;
+    };
+
+    if (!body.token || !body.id) {
+        ctx.response.status = 400;
+        ctx.response.body = { error: "Missing token or id" };
+        return;
+    }
+
+    // ✅ Validate session token and get user ID
+    const sessionResult = await db.query(
+        "SELECT userid FROM sessions WHERE token = ?",
+        [body.token],
+    );
+
+    if (sessionResult.length === 0) {
+        ctx.response.status = 400;
+        ctx.response.body = { error: "Invalid session token" };
+        return;
+    }
+
+    const userId = sessionResult[0].userid;
+
+    // ✅ Check if the user is the owner of the content
+    const contentResult = await db.query(
+        "SELECT userid, path FROM usercontent WHERE id = ?",
+        [body.id],
+    );
+
+    if (contentResult.length === 0) {
+        ctx.response.status = 404;
+        ctx.response.body = { error: "Content not found." };
+        return;
+    }
+
+    const content = contentResult[0];
+    if (content.userid !== userId) {
+        ctx.response.status = 403;
+        ctx.response.body = { error: "You are not the owner of this content." };
+        return;
+    }
+
+    // ✅ Delete the file from disk
+    try {
+        await Deno.remove(content.path);
+    } catch (error) {
+        ctx.response.status = 500;
+        ctx.response.body = { error: "Error deleting file from disk." };
+        return;
+    }
+
+    // ✅ Delete the record from the database
+    await db.execute("DELETE FROM usercontent WHERE id = ?", [body.id]);
+
+    ctx.response.body = { message: "Content deleted successfully." };
+});
+
 app.use(async (ctx, next) => {
     console.log(`Incoming request: ${ctx.request.method} ${ctx.request.url}`);
     await next();
