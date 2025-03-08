@@ -169,7 +169,7 @@ router.post("/get_file_info", async (ctx: Context) => {
             size: fileInfo.size,
             modified_at: fileInfo.mtime?.toISOString(),
         };
-    } catch (error) {
+    } catch (_error) {
         ctx.response.status = 500;
         ctx.response.body = { error: "Could not retrieve file info." };
     }
@@ -216,9 +216,10 @@ router.post("/get_user_uploads", async (ctx: Context) => {
     }
 
     // Return the uploads as JSON
+    // deno-lint-ignore no-explicit-any
     ctx.response.body = uploads.map((upload: any) => ({
         id: upload.id,
-        url: `${BASE_URL}${upload.path.split('/').pop()}`, // Generate URL from file path
+        url: `${BASE_URL}${upload.path.split("/").pop()}`, // Generate URL from file path
         type: upload.type,
         created_at: upload.created_at,
     }));
@@ -273,7 +274,7 @@ router.post("/delete_content", async (ctx: Context) => {
     // ✅ Delete the file from disk
     try {
         await Deno.remove(content.path);
-    } catch (error) {
+    } catch (_error) {
         ctx.response.status = 500;
         ctx.response.body = { error: "Error deleting file from disk." };
         return;
@@ -285,11 +286,63 @@ router.post("/delete_content", async (ctx: Context) => {
     ctx.response.body = { message: "Content deleted successfully." };
 });
 
+router.post("/delete_all_content", async (ctx: Context) => {
+    const body = await ctx.request.body().value as { token?: string };
+
+    if (!body.token) {
+        ctx.response.status = 400;
+        ctx.response.body = { error: "Missing token" };
+        return;
+    }
+
+    // ✅ Haal user ID op via sessie token
+    const sessionResult = await db.query(
+        "SELECT userid FROM sessions WHERE token = ?",
+        [body.token],
+    );
+
+    if (sessionResult.length === 0) {
+        ctx.response.status = 400;
+        ctx.response.body = { error: "Invalid session token" };
+        return;
+    }
+
+    const userId = sessionResult[0].userid;
+
+    // ✅ Haal alle content op die bij de gebruiker hoort
+    const contentResult = await db.query(
+        "SELECT id, path FROM usercontent WHERE userid = ?",
+        [userId],
+    );
+
+    if (contentResult.length === 0) {
+        ctx.response.body = { message: "No content to delete." };
+        return;
+    }
+
+    // ✅ Verwijder elk bestand van de schijf
+    let deletedFiles = 0;
+    for (const content of contentResult) {
+        try {
+            await Deno.remove(content.path);
+            deletedFiles++;
+        } catch (_error) {
+            console.warn(`Failed to delete file: ${content.path}`);
+        }
+    }
+
+    // ✅ Verwijder alle database records van deze gebruiker
+    await db.execute("DELETE FROM usercontent WHERE userid = ?", [userId]);
+
+    ctx.response.body = {
+        message: `Deleted ${deletedFiles} file(s) and database records.`,
+    };
+});
+
 app.use(async (ctx, next) => {
     console.log(`Incoming request: ${ctx.request.method} ${ctx.request.url}`);
     await next();
 });
-
 
 app.use(router.routes());
 app.use(router.allowedMethods());
