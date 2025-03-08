@@ -177,7 +177,6 @@ router.post("/get_file_info", async (ctx: Context) => {
 
 // ✅ Get User Uploads by Session Token
 router.post("/get_user_uploads", async (ctx: Context) => {
-    console.log(`get_user_uploads request: ${ctx.request.method} ${ctx.request.url}`);
     const body = await ctx.request.body().value as {
         token?: string;
     };
