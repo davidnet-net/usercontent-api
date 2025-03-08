@@ -1,4 +1,8 @@
-import { Application, Context, Router } from "https://deno.land/x/oak@v12.1.0/mod.ts";
+import {
+    Application,
+    Context,
+    Router,
+} from "https://deno.land/x/oak@v12.1.0/mod.ts";
 import { config } from "https://deno.land/x/dotenv@v3.2.2/mod.ts";
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 import { extname } from "https://deno.land/std@0.203.0/path/mod.ts";
@@ -41,7 +45,10 @@ router.post("/upload", async (ctx: Context) => {
     }
 
     // ✅ Session Validation
-    const sessionResult = await db.query("SELECT userid FROM sessions WHERE token = ?", [token]);
+    const sessionResult = await db.query(
+        "SELECT userid FROM sessions WHERE token = ?",
+        [token],
+    );
     if (sessionResult.length === 0) {
         ctx.response.status = 400;
         ctx.response.body = { error: "Invalid session token" };
@@ -59,7 +66,9 @@ router.post("/upload", async (ctx: Context) => {
     }
 
     // ✅ Save File
-    const filename = `${generateRandomString(20)}_${file.originalName ?? "unknown_file"}`;
+    const filename = `${generateRandomString(20)}_${
+        file.originalName ?? "unknown_file"
+    }`;
     const filepath = `${UPLOAD_DIR}${filename}`;
     await Deno.writeFile(filepath, await Deno.readFile(file.filename ?? ""));
 
@@ -79,30 +88,40 @@ router.post("/upload", async (ctx: Context) => {
     // ✅ Insert Record into DB
     const dbResult = await db.execute(
         `INSERT INTO usercontent (userid, path, type, created_at) VALUES (?, ?, ?, ?)`,
-        [userid, filepath, type, created_at]
+        [userid, filepath, type, created_at],
     );
     const contentId = dbResult.lastInsertId;
 
-    ctx.response.body = { message: "File uploaded successfully", id: contentId, url: `${BASE_URL}${filename}` };
+    ctx.response.body = {
+        message: "File uploaded successfully",
+        id: contentId,
+        url: `${BASE_URL}${filename}`,
+    };
 });
 
 // ✅ Get Content ID by File URL
 router.get("/get_content_id", async (ctx: Context) => {
-    const url = ctx.request.url.searchParams.get("url");
-    if (!url) {
+    const body = await ctx.request.body().value as {
+        url?: string;
+    };
+
+    if (!body.url) {
         ctx.response.status = 400;
-        ctx.response.body = { error: "Missing file URL." };
+        ctx.response.body = { error: "Missing url" };
         return;
     }
 
-    if (!url.startsWith(BASE_URL)) {
+    if (!body.url.startsWith(BASE_URL)) {
         ctx.response.status = 400;
         ctx.response.body = { error: "Invalid file URL." };
         return;
     }
 
-    const relativePath = url.replace(BASE_URL, UPLOAD_DIR); // Zet URL om naar bestandspad
-    const result = await db.query("SELECT id FROM uploaded_files WHERE file_path = ?", [relativePath]);
+    const relativePath = body.url.replace(BASE_URL, UPLOAD_DIR); // Zet URL om naar bestandspad
+    const result = await db.query(
+        "SELECT id FROM uploaded_files WHERE file_path = ?",
+        [relativePath],
+    );
 
     if (result.length === 0) {
         ctx.response.status = 404;
@@ -115,14 +134,20 @@ router.get("/get_content_id", async (ctx: Context) => {
 
 // ✅s Get File Info by ID
 router.get("/get_file_info", async (ctx: Context) => {
-    const id = ctx.request.url.searchParams.get("id");
-    if (!id) {
+    const body = await ctx.request.body().value as {
+        id?: string;
+    };
+
+    if (!body.id) {
         ctx.response.status = 400;
-        ctx.response.body = { error: "Missing file ID." };
+        ctx.response.body = { error: "Missing id" };
         return;
     }
 
-    const result = await db.query("SELECT file_path, user_id, file_type, created_at FROM uploaded_files WHERE id = ?", [id]);
+    const result = await db.query(
+        "SELECT file_path, user_id, file_type, created_at FROM uploaded_files WHERE id = ?",
+        [body.id],
+    );
 
     if (result.length === 0) {
         ctx.response.status = 404;
@@ -135,7 +160,7 @@ router.get("/get_file_info", async (ctx: Context) => {
     try {
         const fileInfo = await Deno.stat(file_path);
         ctx.response.body = {
-            id: id,
+            id: body.id,
             user_id: user_id,
             file_type: file_type,
             created_at: created_at,
