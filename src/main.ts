@@ -100,7 +100,7 @@ router.post("/upload", async (ctx: Context) => {
 });
 
 // ✅ Get Content ID by File URL
-router.get("/get_content_id", async (ctx: Context) => {
+router.post("/get_content_id", async (ctx: Context) => {
     const body = await ctx.request.body().value as {
         url?: string;
     };
@@ -133,7 +133,7 @@ router.get("/get_content_id", async (ctx: Context) => {
 });
 
 // ✅s Get File Info by ID
-router.get("/get_file_info", async (ctx: Context) => {
+router.post("/get_file_info", async (ctx: Context) => {
     const body = await ctx.request.body().value as {
         id?: string;
     };
@@ -176,7 +176,7 @@ router.get("/get_file_info", async (ctx: Context) => {
 });
 
 // ✅ Get User Uploads by Session Token
-router.get("/get_user_uploads", async (ctx: Context) => {
+router.post("/get_user_uploads", async (ctx: Context) => {
     const body = await ctx.request.body().value as {
         token?: string;
     };
