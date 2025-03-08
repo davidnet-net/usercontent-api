@@ -14,7 +14,7 @@ const db = await connectdb(environment);
 
 // CORS Config
 app.use(oakCors({
-    origin: ["https://www.davidnet.net", "https://davidnet.net", "https://account.davidnet.net", "https://auth.davidnet.net"],
+    origin: "https://account.davidnet.net",
     methods: ["POST", "GET"],
     allowedHeaders: ["Content-Type"],
     credentials: true,
