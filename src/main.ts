@@ -74,7 +74,7 @@ router.post("/upload", async (ctx: Context) => {
 
     // ✅ Insert Record into DB
     const dbResult = await db.execute(
-        `INSERT INTO uploaded_files (user_id, file_path, file_type, created_at) VALUES (?, ?, ?, ?)`,
+        `INSERT INTO usercontent (userid, path, type, created_at) VALUES (?, ?, ?, ?)`,
         [userid, filepath, type, new Date().toISOString()]
     );
     const contentId = dbResult.lastInsertId;
