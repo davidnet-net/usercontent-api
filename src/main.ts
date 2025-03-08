@@ -72,10 +72,14 @@ router.post("/upload", async (ctx: Context) => {
         return;
     }
 
+    const currentUTCDate = new Date();
+    const created_at = currentUTCDate.toISOString().slice(0, 19)
+        .replace("T", " ");
+
     // ✅ Insert Record into DB
     const dbResult = await db.execute(
         `INSERT INTO usercontent (userid, path, type, created_at) VALUES (?, ?, ?, ?)`,
-        [userid, filepath, type, new Date().toISOString()]
+        [userid, filepath, type, created_at]
     );
     const contentId = dbResult.lastInsertId;
 
